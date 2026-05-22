@@ -13,7 +13,9 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins(
                         "http://localhost:5173",
                         "http://buildersmartenterprices.in",
-                        "https://buildersmartenterprices.in"
+                        "https://buildersmartenterprices.in",
+                        "http://www.buildersmartenterprices.in",
+                        "https://www.buildersmartenterprices.in"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
