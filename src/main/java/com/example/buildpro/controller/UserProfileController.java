@@ -15,7 +15,6 @@ import java.util.Optional;
 
 @Controller
 @RequestMapping("/profile")
-@CrossOrigin(origins = "*")
 public class UserProfileController {
 
     @Autowired

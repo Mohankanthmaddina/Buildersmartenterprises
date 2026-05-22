@@ -20,7 +20,6 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/products")
-@CrossOrigin(origins = "*")
 public class ProductController {
 
     @Autowired

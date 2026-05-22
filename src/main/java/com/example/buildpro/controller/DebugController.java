@@ -24,7 +24,6 @@ import com.example.buildpro.service.AdminService;
 
 @RestController
 @RequestMapping("/debug")
-@CrossOrigin(origins = "*")
 public class DebugController {
 
     @Autowired

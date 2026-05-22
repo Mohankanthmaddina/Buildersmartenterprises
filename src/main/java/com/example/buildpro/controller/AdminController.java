@@ -30,7 +30,6 @@ import com.example.buildpro.service.AdminService;
 
 @Controller
 @RequestMapping("/admin")
-@CrossOrigin(origins = "*")
 public class AdminController {
 
     @Autowired

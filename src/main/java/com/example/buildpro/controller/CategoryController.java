@@ -11,7 +11,6 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/categories")
-@CrossOrigin(origins = "*")
 public class CategoryController {
 
     @Autowired
