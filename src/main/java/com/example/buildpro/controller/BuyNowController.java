@@ -34,7 +34,6 @@ import com.razorpay.RazorpayClient;
 
 @Controller
 @RequestMapping("/buynow")
-@CrossOrigin(origins = "*")
 public class BuyNowController {
 
     @Autowired

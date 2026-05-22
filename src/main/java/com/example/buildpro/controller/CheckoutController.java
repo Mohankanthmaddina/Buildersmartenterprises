@@ -22,7 +22,6 @@ import com.example.buildpro.service.UserService;
 
 @Controller
 @RequestMapping("/checkout")
-@CrossOrigin(origins = "*")
 public class CheckoutController {
 
     @Autowired

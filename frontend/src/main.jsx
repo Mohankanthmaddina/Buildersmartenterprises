@@ -7,6 +7,9 @@ import axios from 'axios'
 import { AuthProvider } from './context/AuthContext'
 
 axios.defaults.withCredentials = true;
+axios.defaults.baseURL = import.meta.env.PROD 
+  ? `http://${window.location.hostname}:8081` 
+  : '';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

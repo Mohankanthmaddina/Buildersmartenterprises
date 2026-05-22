@@ -25,7 +25,6 @@ import com.example.buildpro.service.UserService;
 
 @RestController
 @RequestMapping("/addresses")
-@CrossOrigin(origins = "*")
 public class AddressController {
 
     @Autowired

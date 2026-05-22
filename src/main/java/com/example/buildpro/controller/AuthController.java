@@ -31,7 +31,6 @@ import jakarta.servlet.http.Cookie;
 import org.springframework.http.HttpStatus;
 
 @Controller
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class AuthController {
 
     /**
