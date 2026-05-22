@@ -51,9 +51,10 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: DB_URL,DB_USERNAME,DB_PASSWORD,RAZORPAY_KEY,RAZORPAY_SECRET,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD,GEMINI_API_KEY
+          envs: DB_URL,DB_USERNAME,DB_PASSWORD,RAZORPAY_KEY,RAZORPAY_SECRET,MAIL_HOST,MAIL_PORT,MAIL_USERNAME,MAIL_PASSWORD,GEMINI_API_KEY,API_DOCS_PATH,SWAGGER_UI_PATH,SWAGGER_TAG_SORTER,SWAGGER_OPERATION_SORTER,MAPBOX_ACCESS_TOKEN
           script: |
-            cat > /tmp/ecom.service << 'SERVICE'
+            sudo rm -rf /etc/systemd/system/ecom.service.d
+            cat > /tmp/ecom.service << SERVICE
             [Unit]
             Description=Ecom Spring Boot App
             After=network.target
@@ -71,6 +72,11 @@ jobs:
             Environment="MAIL_USERNAME=${MAIL_USERNAME}"
             Environment="MAIL_PASSWORD=${MAIL_PASSWORD}"
             Environment="GEMINI_API_KEY=${GEMINI_API_KEY}"
+            Environment="API_DOCS_PATH=${API_DOCS_PATH}"
+            Environment="SWAGGER_UI_PATH=${SWAGGER_UI_PATH}"
+            Environment="SWAGGER_TAG_SORTER=${SWAGGER_TAG_SORTER}"
+            Environment="SWAGGER_OPERATION_SORTER=${SWAGGER_OPERATION_SORTER}"
+            Environment="MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}"
             ExecStart=/usr/bin/java -jar /home/ec2-user/ecom.jar
             SuccessExitStatus=143
             Restart=always
@@ -98,6 +104,11 @@ jobs:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
           MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          API_DOCS_PATH: ${{ secrets.API_DOCS_PATH }}
+          SWAGGER_UI_PATH: ${{ secrets.SWAGGER_UI_PATH }}
+          SWAGGER_TAG_SORTER: ${{ secrets.SWAGGER_TAG_SORTER }}
+          SWAGGER_OPERATION_SORTER: ${{ secrets.SWAGGER_OPERATION_SORTER }}
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
 
   # ─────────────────────────────────────────────
   # JOB 2: Build and Deploy React Frontend
