@@ -73,6 +73,7 @@ public class AuthController {
     @PostMapping("/login")
     @ResponseBody
     public ResponseEntity<?> login(@RequestBody LoginRequest request,
+            jakarta.servlet.http.HttpServletRequest httpRequest,
             jakarta.servlet.http.HttpServletResponse response) {
 
         // Step 1: Authenticate credentials
@@ -132,12 +133,14 @@ public class AuthController {
             refreshCookie.setHttpOnly(true);
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge(7 * 24 * 60 * 60);
+            refreshCookie.setSecure(httpRequest.isSecure());
             response.addCookie(refreshCookie);
 
             Cookie jwtCookie = new Cookie("authToken", jwt);
             jwtCookie.setHttpOnly(true);
             jwtCookie.setPath("/");
             jwtCookie.setMaxAge(15 * 60);
+            jwtCookie.setSecure(httpRequest.isSecure());
             response.addCookie(jwtCookie);
 
             return ResponseEntity.ok(new AuthResponse(jwt, "Login successful",
@@ -183,6 +186,7 @@ public class AuthController {
                     jwtCookie.setHttpOnly(true);
                     jwtCookie.setPath("/");
                     jwtCookie.setMaxAge(15 * 60); // 15 minutes
+                    jwtCookie.setSecure(request.isSecure());
                     response.addCookie(jwtCookie);
 
                     return ResponseEntity.ok(Map.of(
@@ -440,17 +444,20 @@ public class AuthController {
 
     @PostMapping("/api/auth/logout")
     @ResponseBody
-    public ResponseEntity<?> logout(jakarta.servlet.http.HttpServletResponse response) {
+    public ResponseEntity<?> logout(jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response) {
         Cookie jwtCookie = new Cookie("authToken", null);
         jwtCookie.setPath("/");
         jwtCookie.setHttpOnly(true);
         jwtCookie.setMaxAge(0);
+        jwtCookie.setSecure(request.isSecure());
         response.addCookie(jwtCookie);
 
         Cookie refreshCookie = new Cookie("refreshToken", null);
         refreshCookie.setPath("/");
         refreshCookie.setHttpOnly(true);
         refreshCookie.setMaxAge(0);
+        refreshCookie.setSecure(request.isSecure());
         response.addCookie(refreshCookie);
 
         return ResponseEntity.ok(Map.of("message", "Logged out successfully"));
