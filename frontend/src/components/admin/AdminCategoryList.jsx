@@ -2,6 +2,28 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import AdminLayout from './AdminLayout';
 
+function CategoryImage({ cat }) {
+    const [imgFailed, setImgFailed] = useState(false);
+    
+    const fallbackEmoji = cat.name.toLowerCase().includes('cement') ? '🏗️' :
+        cat.name.toLowerCase().includes('tiles') ? '🏬' :
+        cat.name.toLowerCase().includes('iron') ? '⚡' :
+        cat.name.toLowerCase().includes('hardware') ? '🛠️' : '📦';
+
+    if (!cat.imageUrl || imgFailed) {
+        return <span className="text-2xl">{fallbackEmoji}</span>;
+    }
+
+    return (
+        <img
+            src={cat.imageUrl}
+            alt={cat.name}
+            onError={() => setImgFailed(true)}
+            className="w-full h-full object-cover rounded-2xl"
+        />
+    );
+}
+
 function AdminCategoryList() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -146,11 +168,8 @@ function AdminCategoryList() {
                         {filteredCategories.map((cat) => (
                             <div key={cat.id} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100/80 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 group relative overflow-hidden flex flex-col justify-between min-h-[220px]">
                                 <div>
-                                    <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center text-2xl mb-4 shadow-inner group-hover:scale-105 transition-transform duration-300">
-                                        {cat.name.toLowerCase().includes('cement') ? '🏗️' :
-                                            cat.name.toLowerCase().includes('tiles') ? '🏬' :
-                                                cat.name.toLowerCase().includes('iron') ? '⚡' :
-                                                    cat.name.toLowerCase().includes('hardware') ? '🛠️' : '📦'}
+                                    <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-2xl flex items-center justify-center mb-4 shadow-inner group-hover:scale-105 transition-transform duration-300 overflow-hidden">
+                                        <CategoryImage cat={cat} />
                                     </div>
                                     <h3 className="text-lg font-extrabold text-slate-800 tracking-tight">{cat.name}</h3>
                                     <p className="text-gray-450 text-xs mt-2 italic leading-relaxed line-clamp-2">{cat.description || 'General industrial material category.'}</p>
