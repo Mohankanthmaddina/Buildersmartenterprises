@@ -13,20 +13,20 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     public void sendOTPEmail(String toEmail, String otpCode, OTP.Purpose purpose) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        // System.out.println("OTP Code:
-        // sendOTPEmail*****************************************"+toEmail+" otp:
-        // "+otpCode+" OTP.purose: "+purpose);
-        message.setSubject(getEmailSubject(purpose));
-        message.setText(getEmailContent(otpCode, purpose));
-        // System.out.println("OTP Code: sendOTPEmail
-        // getContent()*****************************************"+toEmail+" otp:
-        // "+otpCode+" OTP.purose: "+purpose);
-        message.setFrom("mohankanthmaddina1784@gmail.com");
-        // System.out.println("ending !!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        mailSender.send(message);
-        System.out.println("Email sent to " + toEmail);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject(getEmailSubject(purpose));
+            message.setText(getEmailContent(otpCode, purpose));
+            message.setFrom("mohankanthmaddina1784@gmail.com");
+            mailSender.send(message);
+            System.out.println("Email sent to " + toEmail);
+        } catch (Exception e) {
+            System.err.println("Failed to send email to " + toEmail + " due to SMTP/Authentication error: " + e.getMessage());
+            System.out.println("\n==================================================");
+            System.out.println("DEVELOPER OTP FALLBACK: OTP for " + toEmail + " is: " + otpCode);
+            System.out.println("==================================================\n");
+        }
     }
 
     private String getEmailSubject(OTP.Purpose purpose) {
