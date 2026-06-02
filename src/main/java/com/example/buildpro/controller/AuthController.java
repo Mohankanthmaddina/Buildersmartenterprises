@@ -344,7 +344,8 @@ public class AuthController {
     }
 
     @PostMapping("/resend-otp-submit") // Changed URL to avoid conflict
-    public String resendOTP(@RequestParam String email, org.springframework.ui.Model model) {
+    @ResponseBody
+    public ResponseEntity<?> resendOTP(@RequestParam String email) {
         if (authService.hasPendingRegistration(email)) {
             java.util.Optional<com.example.buildpro.model.PendingRegistration> pendingOpt = authService
                     .getPendingRegistration(email);
@@ -352,14 +353,19 @@ public class AuthController {
                 String newOtp = authService.generateOTP();
                 authService.updatePendingRegistrationOTP(email, newOtp);
                 authService.sendOTPEmail(email, newOtp, OTP.Purpose.REGISTRATION);
-                model.addAttribute("message", "OTP sent successfully");
-                model.addAttribute("email", email);
-                model.addAttribute("role", pendingOpt.get().getRole());
-                return "otp-verification"; // Use existing view name
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "OTP sent successfully",
+                        "email", email,
+                        "role", pendingOpt.get().getRole().name()
+                ));
             }
         }
-        model.addAttribute("error", "No pending registration found");
-        return "register";
+        return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "error", "No pending registration found",
+                "message", "No pending registration found for this email address"
+        ));
     }
 
     @PostMapping("/registration-verification")

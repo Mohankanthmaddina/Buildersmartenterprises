@@ -14,12 +14,49 @@ export default defineConfig({
       '/login': {
         target: 'http://localhost:8081',
         changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+        }
       },
       '/register': {
         target: 'http://localhost:8081',
         changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+        }
       },
-      '/logout': {
+      '/registration-verification': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+        }
+      },
+      '/forgot-password': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+        }
+      },
+      '/reset-password': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        bypass: (req) => {
+          if (req.headers.accept?.includes('text/html')) {
+            return '/index.html';
+          }
+        }
+      },
+      '/resend-otp-submit': {
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
