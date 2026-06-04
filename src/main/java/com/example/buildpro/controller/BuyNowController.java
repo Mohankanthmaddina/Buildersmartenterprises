@@ -509,4 +509,117 @@ public class BuyNowController {
             return ResponseEntity.badRequest().body(response);
         }
     }
+
+    @PostMapping("/process-cod")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> processBuyNowCOD(
+            @RequestParam Long productId,
+            @RequestParam Long userId,
+            @RequestParam Long addressId,
+            @RequestParam(defaultValue = "1") Integer quantity) {
+
+        System.out.println("=== PROCESSING BUY NOW COD ORDER (REST) ===");
+        System.out.println("Product ID: " + productId);
+        System.out.println("User ID: " + userId);
+        System.out.println("Address ID: " + addressId);
+        System.out.println("Quantity: " + quantity);
+
+        try {
+            // Verify user
+            Optional<User> userOpt = userService.findById(userId);
+            if (userOpt.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "User not found");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Verify product
+            Optional<Product> productOpt = productService.getProductById(productId);
+            if (productOpt.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Product not found");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            User user = userOpt.get();
+            Product product = productOpt.get();
+
+            // Check stock
+            if (product.getStockQuantity() < quantity) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Insufficient stock");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Get address
+            List<Address> addresses = addressService.getUserAddresses(user);
+            Address selectedAddress = addresses.stream()
+                    .filter(addr -> addr.getId().equals(addressId))
+                    .findFirst()
+                    .orElse(null);
+
+            if (selectedAddress == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Address not found");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Calculate pricing
+            double subtotal = product.getPrice() * quantity;
+            double deliveryCharge = subtotal * 0.05;
+            double discount = subtotal > 1000 ? deliveryCharge * 0.15 : 0;
+            double total = subtotal + deliveryCharge - discount;
+
+            // Create the order
+            Order order = new Order();
+            order.setUser(user);
+            order.setAddress(selectedAddress);
+            order.setPaymentMethod("COD");
+            order.setOrderNumber("ORD_" + System.currentTimeMillis());
+            order.setTotalAmount(subtotal);
+            order.setDeliveryCharge(deliveryCharge);
+            order.setDiscountAmount(discount);
+            order.setFinalAmount(total);
+            order.setStatus(Order.OrderStatus.CONFIRMED);
+            order.setOrderDate(LocalDateTime.now());
+
+            // Create order item
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantity);
+            orderItem.setPrice(product.getPrice());
+            orderItem.setSubtotal(subtotal);
+            order.getOrderItems().add(orderItem);
+
+            // Save the order
+            Order savedOrder = orderRepository.save(order);
+
+            // Update product stock
+            product.setStockQuantity(product.getStockQuantity() - quantity);
+            productService.updateProduct(product.getId(), product);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("orderId", savedOrder.getId());
+            response.put("orderNumber", savedOrder.getOrderNumber());
+            response.put("paymentMethod", "Cash on Delivery");
+            response.put("redirectUrl", "/payment/success/" + savedOrder.getId());
+            response.put("message", "Order placed successfully! You will pay on delivery.");
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("❌ Error processing Buy Now COD (REST): " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Error processing order: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
 }

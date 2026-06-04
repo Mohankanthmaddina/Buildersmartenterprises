@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import Layout from './common/Layout';
 
@@ -15,6 +15,8 @@ function Checkout() {
     });
     const [userId] = useState(localStorage.getItem('currentUserId'));
     const navigate = useNavigate();
+    const location = useLocation();
+    const buyNowState = location.state;
 
     useEffect(() => {
         if (!userId) {
@@ -26,15 +28,32 @@ function Checkout() {
 
     const fetchData = async () => {
         try {
-            const [cartRes, addrRes] = await Promise.all([
-                axios.get(`/cart?userId=${userId}`),
-                axios.get(`/addresses/user/${userId}`)
-            ]);
+            if (buyNowState?.buyNow) {
+                const addrRes = await axios.get(`/addresses/user/${userId}`);
+                setAddresses(addrRes.data);
+                if (addrRes.data.length > 0) {
+                    setSelectedAddressId(addrRes.data[0].id);
+                }
+                setCart({
+                    items: [
+                        {
+                            product: buyNowState.product,
+                            quantity: buyNowState.quantity,
+                            subtotal: buyNowState.product.price * buyNowState.quantity
+                        }
+                    ]
+                });
+            } else {
+                const [cartRes, addrRes] = await Promise.all([
+                    axios.get(`/cart?userId=${userId}`),
+                    axios.get(`/addresses/user/${userId}`)
+                ]);
 
-            setCart(cartRes.data);
-            setAddresses(addrRes.data);
-            if (addrRes.data.length > 0) {
-                setSelectedAddressId(addrRes.data[0].id);
+                setCart(cartRes.data);
+                setAddresses(addrRes.data);
+                if (addrRes.data.length > 0) {
+                    setSelectedAddressId(addrRes.data[0].id);
+                }
             }
         } catch (err) {
             console.error('Error fetching checkout data:', err);
@@ -72,21 +91,51 @@ function Checkout() {
         }
 
         try {
-            const params = new URLSearchParams({
-                userId,
-                addressId: selectedAddressId,
-                paymentMethod: paymentMethod === 'online' ? 'online' : 'cod'
-            });
+            if (buyNowState?.buyNow) {
+                if (paymentMethod === 'online') {
+                    if (!razorpayDetails) return;
+                    const params = new URLSearchParams({
+                        productId: buyNowState.product.id,
+                        userId,
+                        addressId: selectedAddressId,
+                        quantity: buyNowState.quantity,
+                        razorpayPaymentId: razorpayDetails.razorpay_payment_id,
+                        razorpayOrderId: razorpayDetails.razorpay_order_id,
+                        razorpaySignature: razorpayDetails.razorpay_signature
+                    });
+                    const response = await axios.post(`/buynow/process-online?${params.toString()}`);
+                    if (response.data.success) {
+                        navigate(`/payment/success/${response.data.orderId}`);
+                    }
+                } else {
+                    const params = new URLSearchParams({
+                        productId: buyNowState.product.id,
+                        userId,
+                        addressId: selectedAddressId,
+                        quantity: buyNowState.quantity
+                    });
+                    const response = await axios.post(`/buynow/process-cod?${params.toString()}`);
+                    if (response.data.success) {
+                        navigate(`/payment/success/${response.data.orderId}`);
+                    }
+                }
+            } else {
+                const params = new URLSearchParams({
+                    userId,
+                    addressId: selectedAddressId,
+                    paymentMethod: paymentMethod === 'online' ? 'online' : 'cod'
+                });
 
-            if (razorpayDetails) {
-                params.append('razorpayPaymentId', razorpayDetails.razorpay_payment_id);
-                params.append('razorpayOrderId', razorpayDetails.razorpay_order_id);
-                params.append('razorpaySignature', razorpayDetails.razorpay_signature);
-            }
+                if (razorpayDetails) {
+                    params.append('razorpayPaymentId', razorpayDetails.razorpay_payment_id);
+                    params.append('razorpayOrderId', razorpayDetails.razorpay_order_id);
+                    params.append('razorpaySignature', razorpayDetails.razorpay_signature);
+                }
 
-            const response = await axios.post(`/payment/process?${params.toString()}`);
-            if (response.data.success) {
-                navigate(`/payment/success/${response.data.orderId}`);
+                const response = await axios.post(`/payment/process?${params.toString()}`);
+                if (response.data.success) {
+                    navigate(`/payment/success/${response.data.orderId}`);
+                }
             }
         } catch (err) {
             alert('Failed to place order: ' + (err.response?.data?.message || err.message));
@@ -94,11 +143,27 @@ function Checkout() {
     };
 
     const handlePayment = async () => {
+        if (!selectedAddressId) {
+            alert('Please select a delivery address.');
+            return;
+        }
+
         if (paymentMethod === 'cod') {
             processOrder();
         } else {
             try {
-                const orderRes = await axios.post(`/payment/create-razorpay-order?userId=${userId}`);
+                let orderRes;
+                if (buyNowState?.buyNow) {
+                    const params = new URLSearchParams({
+                        productId: buyNowState.product.id,
+                        userId,
+                        quantity: buyNowState.quantity
+                    });
+                    orderRes = await axios.post(`/buynow/create-razorpay-order?${params.toString()}`);
+                } else {
+                    orderRes = await axios.post(`/payment/create-razorpay-order?userId=${userId}`);
+                }
+
                 if (orderRes.data.success) {
                     const options = {
                         key: orderRes.data.keyId,
@@ -118,7 +183,7 @@ function Checkout() {
                     rzp.open();
                 }
             } catch (err) {
-                alert('Payment initialization failed.');
+                alert('Payment initialization failed: ' + (err.response?.data?.message || err.message));
             }
         }
     };
