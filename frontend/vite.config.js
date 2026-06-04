@@ -113,6 +113,10 @@ export default defineConfig({
             return '/index.html';
           }
         }
+      },
+      '/buynow': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
       }
     }
   }

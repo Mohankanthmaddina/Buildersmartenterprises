@@ -47,11 +47,22 @@ function ProductDetail() {
         }
 
         try {
-            await axios.post(`/products/add/${product.id}`, { userId });
+            await axios.post(`/cart/add?userId=${userId}&productId=${product.id}&quantity=${quantity}`);
             alert('Product added to cart!');
         } catch (err) {
             alert('Failed to add product to cart.');
         }
+    };
+
+    const handleBuyNow = () => {
+        const userId = localStorage.getItem('currentUserId');
+        if (!userId) {
+            alert('Please login to purchase items.');
+            navigate('/login');
+            return;
+        }
+
+        navigate('/checkout', { state: { buyNow: true, product, quantity } });
     };
 
     if (loading) return <Layout><div className="p-20 text-center text-gray-400">Loading details...</div></Layout>;
@@ -109,7 +120,10 @@ function ProductDetail() {
                                     <span>🛒</span> Add to Cart
                                 </button>
                             </div>
-                            <button className="w-full bg-gray-900 text-white font-bold rounded-2xl p-4 text-lg hover:bg-black transition-all border-none cursor-pointer">
+                            <button
+                                onClick={handleBuyNow}
+                                className="w-full bg-gray-900 text-white font-bold rounded-2xl p-4 text-lg hover:bg-black transition-all border-none cursor-pointer"
+                            >
                                 ⚡ Buy It Now
                             </button>
                         </div>
