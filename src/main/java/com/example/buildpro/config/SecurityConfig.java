@@ -64,13 +64,14 @@ public class SecurityConfig {
                                                                 "/categories/**",
                                                                 "/checkout/**",
                                                                 "/payment/**",
-                                                                "/api/chat/**", "/api/location/**", "/api/profile/**",
+                                                                "/api/chat/**", "/api/location/**", "/api/profile/**", "/api/auth/**",
                                                                 "/profile", "/profile/**",
                                                                 "/css/**", "/js/**", "/images/**",
                                                                 "/error",
                                                                 "/favicon.ico",
                                                                 "/buynow/**")
                                                 .permitAll()
+                                                .requestMatchers("/api/analytics/**").permitAll()
                                                 .requestMatchers("/admin/**", "/api/admin/**").hasRole("ADMIN")
                                                 .requestMatchers("/user/**").hasRole("USER")
                                                 .anyRequest().authenticated())

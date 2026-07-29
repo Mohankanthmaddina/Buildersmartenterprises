@@ -123,18 +123,26 @@ class UserActivity:
                 top_user_categories["category_id"],
                 categories["name"].alias("category_name"),
                 top_user_categories["total_quantity"]
-            )
+            ).withColumn("calculated_at", spark_current_timestamp())
 
         print("================ Optimized Preference DataFrame ================")
         preference_df.show()
         return preference_df
 
-    
+    def save_user_category_preferences(self, mode="overwrite"):
+        """Computes user category preferences and writes output to MySQL analytics_db."""
+        from config.db_connection import DbConnection
+        df = self.get_preference_Category_df()
+        db_conn = DbConnection()
+        db_conn.write_to_analytics_db(df, "user_category_preferences", mode=mode)
+        return df
+
 
 if __name__ == "__main__":
     user_activity = UserActivity()
     print("********************** UserActivity Analytics ****************************")
-    user_activity.get_preference_Category_df()
+    user_activity.save_user_category_preferences()
     print("closed")
+
 
 

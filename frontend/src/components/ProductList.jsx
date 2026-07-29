@@ -34,6 +34,13 @@ function ProductList() {
         setSortBy('');
     }, [categoryParam, searchQuery]);
 
+    const [analyticsMeta, setAnalyticsMeta] = useState({
+        isNewUser: true,
+        feedType: 'TRENDING_PRODUCTS',
+        preferredCategory: null,
+        trendingProducts: []
+    });
+
     useEffect(() => {
         fetchData();
     }, [categoryParam, searchQuery]);
@@ -41,31 +48,50 @@ function ProductList() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            // Fetch categories for the sidebar/filter
-            const catRes = await axios.get('/products/categories');
-            if (Array.isArray(catRes.data)) {
-                setCategories(catRes.data);
-            } else {
-                console.error('Categories response is not an array:', catRes.data);
-                setCategories([]);
+            const currentUserId = localStorage.getItem('currentUserId');
+            const userQueryStr = currentUserId ? `?userId=${currentUserId}` : '';
+
+            // Fetch personalized/reordered categories for sidebar
+            try {
+                const catRes = await axios.get(`/api/analytics/categories${userQueryStr}`);
+                if (Array.isArray(catRes.data) && catRes.data.length > 0) {
+                    setCategories(catRes.data);
+                } else {
+                    const fallbackCat = await axios.get('/products/categories');
+                    setCategories(fallbackCat.data || []);
+                }
+            } catch (catErr) {
+                const fallbackCat = await axios.get('/products/categories');
+                setCategories(fallbackCat.data || []);
             }
 
-            // Fetch products based on category or search
-            let url = '/products';
+            // Fetch products based on category, search, or analytics feed
             if (searchQuery) {
-                url = `/products/search?q=${encodeURIComponent(searchQuery)}`;
+                const prodRes = await axios.get(`/products/search?q=${encodeURIComponent(searchQuery)}`);
+                setProducts(prodRes.data.products || prodRes.data || []);
             } else if (categoryParam) {
-                url = `/products/category/${encodeURIComponent(categoryParam)}`;
-            }
-
-            const prodRes = await axios.get(url);
-            if (Array.isArray(prodRes.data)) {
-                setProducts(prodRes.data);
-            } else if (prodRes.data && typeof prodRes.data === 'object') {
-                // In case search returns a single object or DTO wrapper
-                setProducts(prodRes.data.products || [prodRes.data]);
+                const prodRes = await axios.get(`/products/category/${encodeURIComponent(categoryParam)}`);
+                setProducts(prodRes.data || []);
             } else {
-                setProducts([]);
+                // Main Feed -> Analytics Recommendation Feed
+                try {
+                    const feedRes = await axios.get(`/api/analytics/feed${userQueryStr}`);
+                    if (feedRes.data && Array.isArray(feedRes.data.products)) {
+                        setProducts(feedRes.data.products);
+                        setAnalyticsMeta({
+                            isNewUser: feedRes.data.isNewUser,
+                            feedType: feedRes.data.feedType,
+                            preferredCategory: feedRes.data.preferredCategory,
+                            trendingProducts: feedRes.data.trendingProducts || []
+                        });
+                    } else {
+                        const fallbackProd = await axios.get('/products');
+                        setProducts(fallbackProd.data || []);
+                    }
+                } catch (feedErr) {
+                    const fallbackProd = await axios.get('/products');
+                    setProducts(fallbackProd.data || []);
+                }
             }
             setError(null);
         } catch (err) {
@@ -277,6 +303,42 @@ function ProductList() {
 
                     {/* Product Grid */}
                     <main className="flex-1">
+                        {!searchQuery && !categoryParam && (
+                            <div className="mb-6">
+                                {analyticsMeta.preferredCategory ? (
+                                    <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-5 rounded-2xl shadow-lg border border-blue-500/30 flex items-center justify-between">
+                                        <div>
+                                            <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full uppercase tracking-widest font-extrabold backdrop-blur-sm">
+                                                🎯 Recommended for You
+                                            </span>
+                                            <h2 className="text-xl font-extrabold mt-2">
+                                                Top Items in "{analyticsMeta.preferredCategory}"
+                                            </h2>
+                                            <p className="text-blue-100 text-sm mt-0.5">
+                                                Based on your PySpark activity & preference analytics
+                                            </p>
+                                        </div>
+                                        <div className="text-4xl hidden sm:block">📊</div>
+                                    </div>
+                                ) : (
+                                    <div className="bg-gradient-to-r from-orange-500 to-amber-600 text-white p-5 rounded-2xl shadow-lg border border-orange-400/30 flex items-center justify-between">
+                                        <div>
+                                            <span className="bg-white/20 text-white text-xs px-3 py-1 rounded-full uppercase tracking-widest font-extrabold backdrop-blur-sm">
+                                                🔥 Popular & Trending Feed
+                                            </span>
+                                            <h2 className="text-xl font-extrabold mt-2">
+                                                Top Hot-Selling Products
+                                            </h2>
+                                            <p className="text-orange-100 text-sm mt-0.5">
+                                                Discover top rated & trending items across our catalog
+                                            </p>
+                                        </div>
+                                        <div className="text-4xl hidden sm:block">🔥</div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <div className="mb-8 flex justify-between items-center">
                             <h1 className="text-3xl font-bold text-gray-800">
                                 {searchQuery ? `Search results for "${searchQuery}"` : (categoryParam || 'All Products')}
@@ -304,7 +366,7 @@ function ProductList() {
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {filteredProducts.map((product) => (
-                                    <div key={product.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all group flex flex-col">
+                                    <div key={product.id} className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all group flex flex-col relative">
                                         <div
                                             className="h-48 bg-gray-100 relative cursor-pointer overflow-hidden"
                                             onClick={() => navigate(`/products/${product.id}`)}
@@ -314,6 +376,11 @@ function ProductList() {
                                                 alt={product.name}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                             />
+                                            {analyticsMeta.preferredCategory && product.category?.name?.toLowerCase() === analyticsMeta.preferredCategory?.toLowerCase() && (
+                                                <span className="absolute top-3 left-3 bg-blue-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow-md z-10">
+                                                    🎯 Preferred
+                                                </span>
+                                            )}
                                             <div className="absolute top-4 right-4 translate-y-8 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
                                                 <button className="bg-white/90 backdrop-blur shadow-lg p-3 rounded-full hover:bg-blue-600 hover:text-white transition-colors border-none cursor-pointer">
                                                     🤍
