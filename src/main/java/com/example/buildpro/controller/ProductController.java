@@ -31,36 +31,47 @@ public class ProductController {
     @Autowired
     private CartService cartService;
 
+    @Autowired
+    private com.example.buildpro.service.AnalyticsService analyticsService;
+
     @GetMapping("/view")
     public String productsPage(Model model, Principal principal, @RequestParam(required = false) String category) {
         System.out.println("=== PRODUCTS PAGE REQUEST ===");
         System.out.println("Category parameter: " + category);
 
+        User currentUser = null;
+        if (principal != null) {
+            String email = principal.getName();
+            model.addAttribute("currentUserEmail", email);
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isPresent()) {
+                currentUser = userOpt.get();
+                int cartSize = cartService.getCartByUser(currentUser).getCartItems().size();
+                model.addAttribute("cartSize", cartSize);
+            }
+        }
+
         List<Product> products;
-        List<Category> categories = productService.getAllCategories();
+        List<Category> categories = analyticsService.getCategoryFeed(currentUser);
+
+        boolean isNewUser = analyticsService.isNewOrInactiveUser(currentUser);
+        Optional<com.example.buildpro.model.analytics.UserCategoryPreference> prefOpt = analyticsService.getUserCategoryPreference(currentUser);
 
         if (category != null && !category.isEmpty()) {
             System.out.println("Filtering products by category: " + category);
             products = productService.getProductsByCategory(category);
-            System.out.println("Found " + products.size() + " products in category: " + category);
             model.addAttribute("selectedCategory", category);
         } else {
-            System.out.println("Loading all products");
-            products = productService.getAllProducts();
-            System.out.println("Found " + products.size() + " total products");
+            System.out.println("Loading personalized product feed (isNewUser: " + isNewUser + ")");
+            products = analyticsService.getUserProductFeed(currentUser);
         }
 
         model.addAttribute("products", products);
         model.addAttribute("categories", categories);
-
-        if (principal != null) {
-            String email = principal.getName(); // Spring Security provides this
-            model.addAttribute("currentUserEmail", email);
-
-            Optional<User> userOpt = userService.findByEmail(email);
-            int cartSize = userOpt.map(u -> cartService.getCartByUser(u).getCartItems().size()).orElse(0);
-            model.addAttribute("cartSize", cartSize);
-        }
+        model.addAttribute("isNewUser", isNewUser);
+        model.addAttribute("feedType", isNewUser ? "TRENDING_PRODUCTS" : "PERSONALIZED_PREFERENCE");
+        model.addAttribute("preferredCategory", prefOpt.map(com.example.buildpro.model.analytics.UserCategoryPreference::getCategoryName).orElse(null));
+        model.addAttribute("trendingAnalytics", analyticsService.getTopTrendingAnalytics());
 
         return "products";
     }

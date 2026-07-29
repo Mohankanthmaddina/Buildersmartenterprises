@@ -12,12 +12,18 @@ function Home() {
     React.useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const response = await axios.get('/products/categories');
+                const currentUserId = localStorage.getItem('currentUserId');
+                const userQueryStr = currentUserId ? `?userId=${currentUserId}` : '';
+                const response = await axios.get(`/api/analytics/categories${userQueryStr}`);
                 if (Array.isArray(response.data)) {
-                    setCategories(response.data.slice(0, 4)); // Show top 4
+                    setCategories(response.data.slice(0, 4)); // Show top 4 personalized/trending categories
                 }
             } catch (err) {
                 console.error(err);
+                try {
+                    const fallback = await axios.get('/products/categories');
+                    setCategories(fallback.data.slice(0, 4));
+                } catch (e) {}
             }
         };
         fetchCategories();
