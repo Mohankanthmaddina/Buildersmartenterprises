@@ -55,4 +55,5 @@ target/
 .env
 *.pem
 application-local.properties
-application-prod.properties
+application-prod.properties__pycache__/ 
+*.pyc 
