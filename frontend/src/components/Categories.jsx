@@ -15,14 +15,21 @@ function Categories() {
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get('/products/categories');
+            const currentUserId = localStorage.getItem('currentUserId');
+            const userQueryStr = currentUserId ? `?userId=${currentUserId}` : '';
+            const response = await axios.get(`/api/analytics/categories${userQueryStr}`);
             if (Array.isArray(response.data)) {
                 setCategories(response.data);
             } else {
-                setCategories([]);
+                const fallback = await axios.get('/products/categories');
+                setCategories(fallback.data || []);
             }
         } catch (err) {
             console.error('Error fetching categories:', err);
+            try {
+                const fallback = await axios.get('/products/categories');
+                setCategories(fallback.data || []);
+            } catch (e) {}
         } finally {
             setLoading(false);
         }
