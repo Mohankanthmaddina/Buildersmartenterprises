@@ -23,6 +23,12 @@ E-commerce-Website-for-Construction-Materials/
 │   │   └── resources/
 │   │       ├── templates/            # Thymeleaf templates (for admin/MVC views)
 │   │       └── application.properties # Spring configuration loader
+├── Model/                            # PySpark Data Analytics & Engineering Subsystem
+│   ├── main.py                       # Main PySpark execution entry point
+│   ├── requirements.txt              # PySpark module dependencies
+│   ├── config/                       # Database connection configuration (db_connection.py)
+│   ├── entities/                     # Data models (users.py, products.py, cart.py, otps.py, categories.py)
+│   └── analytics/                    # Data analytics pipelines (user_activity.py)
 ├── frontend/                         # React Frontend Source Code
 │   ├── src/
 │   │   ├── components/               # Reusable UI Components
