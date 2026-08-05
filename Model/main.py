@@ -4,9 +4,6 @@ import os
 # Ensure package imports resolve when executing directly
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-<<<<<<< HEAD
-from analytics.user_activity import UserActivity
-=======
 from datetime import datetime
 from analytics.user_activity import UserActivity
 from analytics.product_analysis import Product_Analysis
@@ -29,7 +26,6 @@ def log_pipeline_run(spark, db_conn, pipeline_name, status, records_processed, s
         db_conn.write_to_analytics_db(df, "analytics_pipeline_runs", mode="append")
     except Exception as e:
         print(f"[!] Warning: Could not log pipeline run metadata: {e}")
->>>>>>> 21b99174ed381bb6b13a5a291bada8bff154040c
 
 
 def run_analytics():
@@ -37,24 +33,6 @@ def run_analytics():
     print("   BuildPro PySpark Data Analytics Subsystem Engine   ")
     print("=" * 60)
 
-<<<<<<< HEAD
-    user_activity = UserActivity()
-
-    print("\n[+] Cart DataFrame:")
-    user_activity.show_cart_df()
-
-    print("\n[+] Product DataFrame:")
-    user_activity.show_product_df()
-
-    print("\n[+] User DataFrame:")
-    user_activity.show_user_df()
-
-    print("\n[+] OTPs DataFrame:")
-    user_activity.show_otps_df()
-
-    print("\n[+] Categories DataFrame:")
-    user_activity.show_categories_df()
-=======
     db_conn = DbConnection()
     spark = db_conn.get_spark_session()
 
@@ -87,12 +65,7 @@ def run_analytics():
         end_time = datetime.now()
         print(f"[FAILED] Product Trending Analytics pipeline error: {e}")
         log_pipeline_run(spark, db_conn, "ProductTrendingAnalytics", "FAILED", 0, start_time, end_time, error_message=str(e))
->>>>>>> 21b99174ed381bb6b13a5a291bada8bff154040c
 
 
 if __name__ == "__main__":
     run_analytics()
-<<<<<<< HEAD
-=======
-
->>>>>>> 21b99174ed381bb6b13a5a291bada8bff154040c
